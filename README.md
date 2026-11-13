@@ -1,75 +1,114 @@
-# 💸 Fin — Agente Financeiro Pessoal (Telegram + App Web)
+# 💸 App de Organização de Finanças Pessoais com Vibe Coding — Entrega do Desafio DIO
 
-Aplicativo de organização de finanças pessoais construído como evolução do desafio de **Vibe Coding** da DIO. Em vez de parar em um protótipo estático, o projeto implementa um **agente financeiro real** inspirado no Pierre Finance:
-
-- **No dia a dia (Telegram):** você manda `"gastei 42 no ifood"`, `"almoço 30 e uber 18"`, um **áudio** ou a **foto de um comprovante**, e o agente registra tudo sozinho.
-- **Para ver tudo (App Web):** dashboard com gráficos, lista completa de lançamentos com filtros e edição em 1 clique, metas, orçamentos por categoria e um **chat integrado** que compartilha o mesmo cérebro e o mesmo histórico do Telegram.
-
-👉 O documento de requisitos completo está em [PRD.md](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/PRD.md).
+Este repositório documenta a entrega do desafio **Vibe Coding: App de Organização de Finanças Pessoais** da DIO. A partir do conceito proposto no desafio, evoluímos o projeto para **Fin**, um agente financeiro pessoal conversacional inspirado no Pierre Finance, integrando **Telegram** (para registro rápido no dia a dia) e **Aplicação Web** (para visualização detalhada e chat com o agente).
 
 ---
 
-## 🧭 Arquitetura
+## 📋 1. Prompt Final (PRD — Product Requirements Document)
 
-```
- 📱 Telegram (texto, áudio, foto)        💻 App Web (Next.js na Vercel)
-          │                                       │
-          ▼                                       ▼
-   /api/telegram                            /api/chat + Server Actions
-          │                                       │
-          └──────────────►  src/lib/agent.ts  ◄───┘
-                            (Gemini + tools)
-                                   │
-                                   ▼
-                        src/lib/finance.ts (Drizzle)
-                                   │
-                                   ▼
-                          🗄️ Neon (Postgres)
-```
+O documento completo também está disponível em [PRD.md](./PRD.md). Abaixo está o prompt/PRD estruturado utilizado para guiar a IA:
 
-### Principais arquivos
-- [src/db/schema.ts](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/db/schema.ts) — tabelas `transactions`, `goals`, `budgets` e `messages` no Neon.
-- [src/lib/finance.ts](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/lib/finance.ts) — camada única de dados (resumos, tendência de 6 meses, alertas de orçamento, metas).
-- [src/lib/agent.ts](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/lib/agent.ts) — núcleo do agente **Fin** (Gemini via Vercel AI SDK) com ferramentas para registrar, listar, corrigir, apagar, consultar resumos, definir orçamentos e gerenciar metas, além dos mini-agentes **Guardião** 🛡️, **Coach** 🎯 e **Pão-duro** 😤.
-- [src/app/api/telegram/route.ts](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/app/api/telegram/route.ts) — webhook do Telegram (texto, voz, foto, `/resumo`, `/desfazer` e botão inline **↩️ Desfazer**).
-- [src/app/(app)/page.tsx](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/app/(app)/page.tsx) — visão geral com saldo, gráficos e alertas.
-- [src/app/(app)/transacoes/page.tsx](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/app/(app)/transacoes/page.tsx) — lançamentos com busca, filtros, adição manual e edição de categoria.
-- [src/app/(app)/metas/page.tsx](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/app/(app)/metas/page.tsx) — metas financeiras e orçamentos mensais.
-- [src/app/(app)/chat/page.tsx](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/src/app/(app)/chat/page.tsx) — chat web com histórico unificado (Telegram + app).
+```txt
+# Contexto
+Quero criar um aplicativo de Organização de Finanças Pessoais ("Fin") que funcione por meio de conversas em linguagem natural, como se o usuário estivesse falando com um amigo que entende de dinheiro.
+No dia a dia, o usuário envia seus gastos pelo Telegram (texto, áudio ou foto do comprovante); quando quer ver detalhes, abre a aplicação web com gráficos, filtros, metas, orçamentos e um chat integrado com o mesmo agente.
+
+# Problema
+Muitas pessoas desistem de controlar os gastos porque os apps atuais:
+- exigem muita digitação e preenchimento de campos a cada compra;
+- usam termos técnicos que confundem iniciantes;
+- não dão orientações personalizadas sobre como economizar.
+
+# Objetivo do Produto
+Ajudar o usuário a entender para onde vai o dinheiro e a criar o hábito de registrar gastos em menos de 10 segundos por registro.
+
+# Público-Alvo e Persona
+Iniciantes em finanças pessoais, de 18 a 35 anos, que usam muito o celular e já abandonaram planilhas tradicionais.
+Persona: Ana, 24 anos, assistente administrativa. Recebe R$ 2.500/mês, sente que "o dinheiro some" em pequenos gastos (delivery, transporte por app) e quer juntar R$ 3.000 para uma viagem.
+
+# Funcionalidades-Chave (MVP)
+1. Registro de gastos e receitas via chat (Telegram e Web)
+   - Frases como "gastei 42 no iFood", "almoço 30 e uber 18" ou "recebi 2500 de salário".
+   - Suporte a áudio de voz e foto de comprovante/nota fiscal.
+   - Botão "Desfazer" na confirmação e correção em linguagem natural ("na verdade foi Lazer").
+2. Classificação automática
+   - Categorias de despesa: Alimentação, Transporte, Moradia, Lazer, Saúde, Educação, Compras, Assinaturas, Outros.
+   - Categorias de receita: Salário, Freelance, Investimentos, Outras receitas.
+3. Metas financeiras
+   - Criação e acompanhamento pelo chat ou pela web ("quero juntar 3000 para viajar até dezembro"), exibindo progresso (%) e quanto guardar por mês.
+4. Agente Financeiro e Mini-Agentes com personalidade
+   - 🛡️ Guardião: avisa automaticamente quando uma categoria atinge 80% ou 100% do orçamento mensal.
+   - 🎯 Coach de metas: calcula quanto poupar por mês até o prazo de cada meta.
+   - 😤 Pão-duro (opcional): faz um comentário curto e bem-humorado em gastos supérfluos.
+5. Relatórios e Aplicação Web detalhada
+   - Visão Geral (Dashboard): saldo do mês, receitas, gastos, variação vs. mês anterior, gráfico de rosca por categoria e evolução dos últimos 6 meses.
+   - Lançamentos: lista completa com busca, filtros, edição de categoria em 1 clique e exclusão.
+   - Metas e Orçamentos: barras de progresso e limites por categoria.
+   - Chat Integrado: conversa completa com o Fin e histórico unificado (Telegram + Web).
+
+# Personalidade do Agente Financeiro
+- Tom amigável, encorajador e sem julgamentos.
+- Linguagem simples, sem jargões técnicos.
+- Respostas curtas e objetivas, confirmando valor, categoria e descrição.
+- Nunca recomenda investimentos específicos; foca em organização e economia.
+
+# Fora do Escopo do MVP
+- Integração bancária automática / Open Finance.
+- Cartão de crédito com fechamento de fatura.
+- Multiusuário aberto ao público.
+
+# Métricas de Validação
+- Tempo médio para registrar um gasto < 10 segundos.
+- Pelo menos 80% dos registros classificados corretamente sem correção.
+- Uso ativo em pelo menos 5 dias da semana.
+```
 
 ---
 
-## 🚀 Como colocar no ar (Vercel + Neon + Telegram)
+## 🖥️ 2. Resumo do que o App "Fin" Faz
 
-### 1. Variáveis de ambiente
-Copie [.env.example](file:///home/antigravity/aderald0/dio-lab-vibe-coding-app-financas/.env.example) para `.env` (local) e configure as mesmas variáveis no painel da **Vercel**:
+O **Fin** une dois canais conectados ao mesmo núcleo de IA (Gemini com *tool calling*) e ao mesmo banco de dados Postgres (Neon):
 
-| Variável | Onde conseguir |
-|---|---|
-| `DATABASE_URL` | Connection string do seu banco **Neon** |
-| `APP_PASSWORD` | Senha que você vai usar para entrar no app web |
-| `AUTH_SECRET` | Qualquer string aleatória longa (ex.: `openssl rand -hex 32`) |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Chave gratuita no **Google AI Studio** |
-| `TELEGRAM_BOT_TOKEN` | Token gerado pelo **@BotFather** (`/newbot`) |
-| `TELEGRAM_BOT_USERNAME` | User do bot sem `@` (ex.: `meu_fin_bot`) |
-| `TELEGRAM_WEBHOOK_SECRET` | Segredo aleatório (letras, números, `_` ou `-`) |
-| `TELEGRAM_ALLOWED_CHAT_ID` | Seu `chat_id` (veja dica abaixo) |
-| `APP_URL` | URL do seu app na Vercel (ex.: `https://seu-app.vercel.app`) |
+1. **Canal Rápido no Telegram (`@NowfinanceBot`):**
+   - O usuário manda mensagens rápidas na rua (*"gastei 42 no ifood"*), áudios ou fotos de comprovantes.
+   - O agente extrai valor, categoria, descrição e data, grava no banco, verifica se o orçamento da categoria passou de 80% e responde em segundos com um botão **↩️ Desfazer**.
+   - Comandos rápidos: `/resumo`, `/desfazer` e `/ajuda`.
 
-### 2. Criar as tabelas e ativar o webhook do Telegram
-Com o `.env` preenchido e o app já publicado na Vercel, rode uma única vez:
+2. **Aplicação Web Completa (Next.js na Vercel):**
+   - **Visão Geral (`/`)**: saldo do mês em destaque, total de receitas e gastos, comparativo percentual com o mês anterior, gráfico de rosca por categoria, gráfico de barras dos últimos 6 meses, alertas do **Guardião** e resumo das metas.
+   - **Lançamentos (`/transacoes`)**: todos os registros vindos do Telegram ou da web, com busca, filtro por mês/categoria/tipo, inclusão manual e troca de categoria em 1 clique.
+   - **Metas e Orçamentos (`/metas`)**: criação de metas com cálculo automático de poupança mensal sugerida (**Coach**) e definição de limites mensais por categoria (**Guardião**).
+   - **Conversar com o Fin (`/chat`)**: chat web conectado ao mesmo agente e ao mesmo histórico do Telegram.
 
-```bash
-npm install
-npm run setup
-```
+---
 
-Esse comando cria as 4 tabelas no Neon e registra o webhook do Telegram apontando para `APP_URL/api/telegram`.
+## 💬 3. Exemplo de Interação com o Agente
 
-> 💡 **Como descobrir seu `TELEGRAM_ALLOWED_CHAT_ID`:** deixe essa variável vazia no primeiro deploy e mande um `"oi"` para o bot no Telegram. Ele vai responder com o seu `chat_id`. Aí é só colar esse número na Vercel e fazer redeploy — a partir daí o bot ignora qualquer outra pessoa.
+> **Usuária (no Telegram):** `gastei 42 no ifood e 18 de uber`  
+> **Fin:**  
+> ✅ R\$ 42,00 · Alimentação · iFood  
+> ✅ R\$ 18,00 · Transporte · Uber  
+> 🛡️ *Guardião:* você já usou **84%** do seu orçamento de Alimentação deste mês (R\$ 420,00 de R\$ 500,00).  
+> `[↩️ Desfazer]` `[📊 Ver no app]`
 
-### 3. Rodar localmente
-```bash
-npm run dev
-```
-Abra `http://localhost:3000` e entre com a senha definida em `APP_PASSWORD`.
+> **Usuária (no Chat do App Web):** `quero juntar 3000 para viajar até dezembro, quanto preciso guardar por mês?`  
+> **Fin:**  
+> Criei sua meta **Viagem** de **R\$ 3.000,00**! 🎯  
+> Guardando **R\$ 375,00 por mês** até dezembro você bate a meta no prazo. Quer que eu ajuste seu orçamento de Lazer ou Delivery para abrir esse espaço no mês?
+
+---
+
+## 🧠 4. Reflexão sobre o Processo de Vibe Coding
+
+### O que funcionou bem?
+- **Começar pelo PRD antes de qualquer tela ou código:** estruturar persona, escopo do MVP, categorias fixas e personalidade dos mini-agentes (*Guardião*, *Coach* e *Pão-duro*) fez com que a IA gerasse fluxos e ferramentas coerentes desde a primeira iteração.
+- **Separar captura rápida de análise detalhada:** usar o Telegram para o registro do dia a dia (onde a fricção precisa ser zero) e uma aplicação web para gráficos, filtros e planejamento resolveu a maior dor apontada no problema inicial.
+- **Núcleo único com chamada de ferramentas (*tool calling*):** em vez de depender apenas de respostas de texto, dar ferramentas reais ao agente (`registrar_lancamentos`, `resumo_periodo`, `definir_orcamento`, `criar_meta`) garantiu que ele nunca inventasse números.
+
+### O que não funcionou como o esperado?
+- **Prompt inicial muito aberto:** na primeira versão do PRD faltavam exemplos concretos de frases, limites do que estava *fora do escopo* e regras claras de categorização, o que deixava margem para respostas genéricas.
+- **Mudança de versão de modelos da API:** ao conectar a chave da API do Gemini, o modelo `gemini-2.5-flash` já havia sido substituído para novas contas pelo `gemini-3.8-flash`, exigindo parametrizar o modelo por variável de ambiente (`GEMINI_MODEL`).
+
+### O que aprendi sobre conversar com IAs?
+- **Contexto e restrições valem mais do que prompts longos:** dizer claramente o que *não* entra no MVP e dar 3 ou 4 exemplos reais (*"gastei 35 no iFood"*, *"na verdade foi Lazer"*) direciona muito melhor o resultado.
+- **Iterar em etapas curtas:** primeiro validar o PRD e os conceitos, depois explorar a arquitetura (WhatsApp vs. Telegram vs. Web) e só então construir e publicar na nuvem tornou o processo previsível e didático.

@@ -19,7 +19,7 @@ export interface AgentResult {
   events: AgentEvent[];
 }
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const PAO_DURO = (process.env.AGENT_PAO_DURO ?? "on") !== "off";
 
 function instructions(channel: Channel): string {

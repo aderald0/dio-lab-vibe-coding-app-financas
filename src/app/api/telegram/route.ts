@@ -144,16 +144,9 @@ export async function POST(req: Request) {
   const chatId = update.message?.chat.id ?? update.callback_query?.message?.chat.id;
   if (!chatId) return Response.json({ ok: true });
 
-  // 2) Só responde ao dono do bot.
+  // 2) Se TELEGRAM_ALLOWED_CHAT_ID estiver definido, só responde a esse chat_id.
   const allowed = process.env.TELEGRAM_ALLOWED_CHAT_ID;
-  if (!allowed) {
-    await sendMessage(
-      chatId,
-      `🔧 Configuração: seu chat_id é <code>${chatId}</code>.\nDefina <b>TELEGRAM_ALLOWED_CHAT_ID</b> com esse valor na Vercel e faça um novo deploy.`,
-    );
-    return Response.json({ ok: true });
-  }
-  if (String(chatId) !== allowed) return Response.json({ ok: true });
+  if (allowed && String(chatId) !== allowed) return Response.json({ ok: true });
 
   try {
     if (update.callback_query) await handleCallback(update.callback_query);
